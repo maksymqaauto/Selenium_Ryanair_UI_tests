@@ -22,7 +22,7 @@ jobs:
 
     - name: 🚀 Run tests inside Docker
       run: |
-        docker run --rm \
+        timeout 600 docker run --rm \
           -v ${{ github.workspace }}/allure-results:/app/allure-results \
           -v ${{ github.workspace }}/screenshots:/app/screenshots \
           -v ${{ github.workspace }}/logs:/app/logs \

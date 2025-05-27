@@ -30,4 +30,4 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY . .
 
 # Запуск тестов
-ENTRYPOINT ["xvfb-run", "pytest"]
+ENTRYPOINT ["xvfb-run", "pytest", "--capture=tee-sys"]
