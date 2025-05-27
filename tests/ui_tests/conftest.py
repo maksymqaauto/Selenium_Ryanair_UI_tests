@@ -1,11 +1,11 @@
 import os
 from datetime import datetime
-
 from selenium import webdriver
-import pytest
 from config.config import USER_1, PASS_1, USER_2, PASS_2, BASE_URL
 from pages.ryanair_page import RyanairPage
 from selenium.webdriver.chrome.service import Service
+import logging
+import pytest
 
 
 
@@ -87,3 +87,21 @@ def flight_search_setup(driver):
     page.set_departure()
     page.set_destination()
     return page
+
+
+# Настройка логгера один раз
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[
+        logging.FileHandler("logs/pytest.log"),  # путь внутри контейнера, монтируй папку logs в Docker
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+@pytest.fixture(autouse=True)
+def log_test_start_and_finish(request):
+    logger.info(f"START test: {request.node.name}")
+    yield
+    logger.info(f"END test: {request.node.name}")

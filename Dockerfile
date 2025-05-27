@@ -24,6 +24,9 @@ RUN wget -O /tmp/chromedriver.zip https://edgedl.me.gvt1.com/edgedl/chrome/chrom
 # Рабочая директория
 WORKDIR /app
 
+# Создаем папку для логов, чтобы pytest мог туда писать
+RUN mkdir -p /app/logs
+
 # Копируем зависимости Python
 COPY requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
@@ -35,6 +38,4 @@ COPY . .
 ENV PYTHONWARNINGS="ignore"
 
 # Точка входа — запуск тестов под xvfb с выводом в консоль и в файлы (если настроено в pytest)
-ENTRYPOINT ["xvfb-run", "--server-args=-screen 0 1920x1080x24", "pytest", "--capture=tee-sys", "-vv", "--log-cli-level=INFO"]
-
-# Можно добавить CMD [] если нужна команда по умолчанию
+ENTRYPOINT ["xvfb-run", "--server-args=-screen 0 1920x1080x24", "pytest", "--capture=tee-sys", "-v", "--maxfail=3", "--timeout=300"]
