@@ -6,7 +6,7 @@ import pytest
 from config.config import USER_1, PASS_1, USER_2, PASS_2, BASE_URL
 from pages.ryanair_page import RyanairPage
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
+
 
 
 @pytest.fixture(scope="function")
@@ -16,8 +16,10 @@ def driver(request):
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
     options.add_argument("--window-size=1920,1080")
+    options.add_argument("--disable-dev-shm-usage")  # Помогает в Docker среде
 
-    service = Service(ChromeDriverManager().install())
+    # Используем локально установленный chromedriver из контейнера
+    service = Service("/usr/local/bin/chromedriver")
     driver = webdriver.Chrome(service=service, options=options)
 
     yield driver
