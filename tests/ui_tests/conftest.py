@@ -1,23 +1,49 @@
+import os
+from datetime import datetime
+
 from selenium import webdriver
 import pytest
 from config.config import USER_1, PASS_1, USER_2, PASS_2, BASE_URL
 from pages.ryanair_page import RyanairPage
 from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 
 
-@pytest.fixture
-def driver():
-    chrome_options = Options()
-    chrome_options.add_argument("--headless=new")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--window-size=1920,1080")
+@pytest.fixture(scope="function")
+def driver(request):
+    options = webdriver.ChromeOptions()
+    options.add_argument("--headless")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--window-size=1920,1080")
+
     service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+    driver = webdriver.Chrome(service=service, options=options)
+
     yield driver
+
+    if request.node.rep_call.failed:
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+        screenshots_dir = os.path.join(os.getcwd(), "screenshots")
+        os.makedirs(screenshots_dir, exist_ok=True)
+        screenshot_file = os.path.join(screenshots_dir, f"{request.node.name}_{timestamp}.png")
+        driver.save_screenshot(screenshot_file)
+
+        logs_dir = os.path.join(os.getcwd(), "logs")
+        os.makedirs(logs_dir, exist_ok=True)
+        log_file = os.path.join(logs_dir, f"{request.node.name}_{timestamp}.log")
+        with open(log_file, "w", encoding="utf-8") as f:
+            f.write(f"Test '{request.node.name}' failed at {timestamp}\n")
+
     driver.quit()
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    outcome = yield
+    rep = outcome.get_result()
+    setattr(item, f"rep_{rep.when}", rep)
 
 
 @pytest.fixture

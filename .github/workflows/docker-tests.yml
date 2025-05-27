@@ -1,0 +1,47 @@
+name: UI Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  selenium-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
+    - name: 🐳 Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: 🛠️ Build Docker image
+      run: docker build -t selenium-tests .
+
+    - name: 🚀 Run tests inside Docker
+      run: |
+        docker run --rm \
+          -v ${{ github.workspace }}/allure-results:/app/allure-results \
+          -v ${{ github.workspace }}/screenshots:/app/screenshots \
+          -v ${{ github.workspace }}/logs:/app/logs \
+          selenium-tests
+
+    - name: 📤 Upload Allure results
+      uses: actions/upload-artifact@v4
+      with:
+        name: allure-results
+        path: allure-results/
+
+    - name: 📤 Upload Screenshots (on failure)
+      uses: actions/upload-artifact@v4
+      with:
+        name: screenshots
+        path: screenshots/
+
+    - name: 📤 Upload Logs
+      uses: actions/upload-artifact@v4
+      with:
+        name: logs
+        path: logs/
