@@ -2,14 +2,23 @@ from selenium import webdriver
 import pytest
 from config.config import USER_1, PASS_1, USER_2, PASS_2, BASE_URL
 from pages.ryanair_page import RyanairPage
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 
 
-@pytest.fixture()
+@pytest.fixture
 def driver():
-    browser = webdriver.Chrome()
-    browser.maximize_window()
-    yield browser
-    browser.quit()
+    chrome_options = Options()
+    chrome_options.add_argument("--headless=new")  # или просто "--headless" для старых версий
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--window-size=1920,1080")
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+    yield driver
+    driver.quit()
 
 
 @pytest.fixture

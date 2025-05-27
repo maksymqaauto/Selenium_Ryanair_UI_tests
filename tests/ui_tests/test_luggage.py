@@ -1,34 +1,14 @@
-from pages.app_store_page import AppStorePage
 from pages.luggage_booking_page import LuggageBookingPage
-from pages.ryanair_page import RyanairPage
 from pages.seat_booking_page import SeatBookingPage
 import pytest
 import allure
 
 
-
-
-@allure.feature('Tariffs')
-@allure.story('Select Plus tariff')
-@pytest.mark.smoke
-@pytest.mark.ui
-def test_tariff_plus_selection(driver, flight_search_setup):
-    ryanair_page = flight_search_setup
-    ryanair_page.month_select()
-    ryanair_page.set_dep_date()
-    ryanair_page.set_ret_date()
-    ryanair_page.search_button_click()
-    ryanair_page.set_price_for_departure()
-    ryanair_page.set_price_for_return()
-    ryanair_page.plus_tariff_select()
-    assert ryanair_page.check_that_tariff_was_selected(), 'The tariff plus has not been selected'
-
-
 @allure.feature('Booking')
-@allure.story('Seat booking')
+@allure.story('Add luggage')
 @pytest.mark.smoke
 @pytest.mark.ui
-def test_seat_booking(driver, ryanair_logged_in):
+def test_luggage_booking(driver, ryanair_logged_in):
     ryanair_page = ryanair_logged_in
     ryanair_page.set_departure()
     ryanair_page.set_destination()
@@ -39,6 +19,7 @@ def test_seat_booking(driver, ryanair_logged_in):
     ryanair_page.set_price_for_departure()
     ryanair_page.set_price_for_return()
     ryanair_page.plus_tariff_select()
+    ryanair_page.additional_window_skip()
     ryanair_page.title_selection()
     ryanair_page.name_selection()
     ryanair_page.surname_selection()
@@ -49,7 +30,8 @@ def test_seat_booking(driver, ryanair_logged_in):
     set_booking_page.place_for_return_flight_select()
     set_booking_page.continue_button_click()
     set_booking_page.refuse_from_the_fast_track()
-    assert set_booking_page.places_selection_completed(), 'The seat booking is not completed'
-
-
-
+    luggage_booking_page = LuggageBookingPage(driver)
+    luggage_booking_page.add_one_more_hand_luggage()
+    luggage_booking_page.add_one_more_20kg_luggage()
+    luggage_booking_page.click_continue()
+    assert luggage_booking_page.check_luggage_was_added(), 'The luggage has not been added'
