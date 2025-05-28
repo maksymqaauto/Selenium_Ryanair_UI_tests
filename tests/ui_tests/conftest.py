@@ -6,7 +6,22 @@ from pages.ryanair_page import RyanairPage
 from selenium.webdriver.chrome.service import Service
 import logging
 import pytest
+import platform
 
+
+log_dir = os.path.join(os.getcwd(), "logs")
+os.makedirs(log_dir, exist_ok=True)
+
+# Настройка логирования
+log_file_path = os.path.join(log_dir, "pytest.log")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler(log_file_path, mode='w', encoding='utf-8')
+    ]
+)
 
 
 @pytest.fixture(scope="function")
@@ -18,24 +33,27 @@ def driver(request):
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--disable-dev-shm-usage")
 
-    # Используем локально установленный chromedriver из контейнера
-    service = Service("/usr/local/bin/chromedriver")
+    if platform.system() == "Linux":
+        service = Service("/usr/local/bin/chromedriver")
+    else:
+        service = Service()
+
     driver = webdriver.Chrome(service=service, options=options)
 
     yield driver
 
-    if request.node.rep_call.failed:
+    if hasattr(request.node, "rep_call") and request.node.rep_call.failed:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
         screenshots_dir = os.path.join(os.getcwd(), "screenshots")
         os.makedirs(screenshots_dir, exist_ok=True)
-        screenshot_file = os.path.join(screenshots_dir, f"{request.node.name}_{timestamp}.png")
-        driver.save_screenshot(screenshot_file)
+        screenshot_path = os.path.join(screenshots_dir, f"{request.node.name}_{timestamp}.png")
+        driver.save_screenshot(screenshot_path)
 
         logs_dir = os.path.join(os.getcwd(), "logs")
         os.makedirs(logs_dir, exist_ok=True)
-        log_file = os.path.join(logs_dir, f"{request.node.name}_{timestamp}.log")
-        with open(log_file, "w", encoding="utf-8") as f:
+        log_path = os.path.join(logs_dir, f"{request.node.name}_{timestamp}.log")
+        with open(log_path, "w", encoding="utf-8") as f:
             f.write(f"Test '{request.node.name}' failed at {timestamp}\n")
 
     driver.quit()
@@ -45,6 +63,7 @@ def driver(request):
 def pytest_runtest_makereport(item, call):
     outcome = yield
     rep = outcome.get_result()
+
     setattr(item, f"rep_{rep.when}", rep)
 
 
@@ -89,12 +108,12 @@ def flight_search_setup(driver):
     return page
 
 
-# Настройка логгера один раз
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s',
     handlers=[
-        logging.FileHandler("logs/pytest.log"),  # путь внутри контейнера, монтируй папку logs в Docker
+        logging.FileHandler("logs/pytest.log"),
         logging.StreamHandler()
     ]
 )
