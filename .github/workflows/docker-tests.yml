@@ -29,11 +29,11 @@ jobs:
           -v ${{ github.workspace }}/logs:/app/logs \
           selenium-tests
 
-    - name: 📄 Show last lines of pytest.log (debug)
+    - name: 📄 Show pytest.log (if exists)
       if: always()
       run: |
         echo "::group::📄 pytest.log"
-        tail -n 50 logs/pytest.log || echo "No log file found"
+        cat logs/pytest.log || echo "No log file found"
         echo "::endgroup::"
 
     - name: 📤 Upload Allure results

@@ -8,11 +8,15 @@ import logging
 import pytest
 import platform
 
-log_dir = os.path.join(os.getcwd(), "logs")
-os.makedirs(log_dir, exist_ok=True)
+# Жёстко заданные пути для CI
+LOG_DIR = "/app/logs"
+SCREENSHOT_DIR = "/app/screenshots"
+
+os.makedirs(LOG_DIR, exist_ok=True)
+os.makedirs(SCREENSHOT_DIR, exist_ok=True)
 
 # Настройка логирования
-log_file_path = os.path.join(log_dir, "pytest.log")
+log_file_path = os.path.join(LOG_DIR, "pytest.log")
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -44,14 +48,10 @@ def driver(request):
     if hasattr(request.node, "rep_call") and request.node.rep_call.failed:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-        screenshots_dir = os.path.join(os.getcwd(), "screenshots")
-        os.makedirs(screenshots_dir, exist_ok=True)
-        screenshot_path = os.path.join(screenshots_dir, f"{request.node.name}_{timestamp}.png")
+        screenshot_path = os.path.join(SCREENSHOT_DIR, f"{request.node.name}_{timestamp}.png")
         driver.save_screenshot(screenshot_path)
 
-        logs_dir = os.path.join(os.getcwd(), "logs")
-        os.makedirs(logs_dir, exist_ok=True)
-        log_path = os.path.join(logs_dir, f"{request.node.name}_{timestamp}.log")
+        log_path = os.path.join(LOG_DIR, f"{request.node.name}_{timestamp}.log")
         with open(log_path, "w", encoding="utf-8") as f:
             f.write(f"Test '{request.node.name}' failed at {timestamp}\n")
 
@@ -62,7 +62,6 @@ def driver(request):
 def pytest_runtest_makereport(item, call):
     outcome = yield
     rep = outcome.get_result()
-
     setattr(item, f"rep_{rep.when}", rep)
 
 
@@ -107,14 +106,6 @@ def flight_search_setup(driver):
     return page
 
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(message)s',
-    handlers=[
-        logging.FileHandler("logs/pytest.log"),
-        logging.StreamHandler()
-    ]
-)
 logger = logging.getLogger(__name__)
 
 
