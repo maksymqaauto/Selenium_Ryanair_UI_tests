@@ -1,25 +1,47 @@
 FROM python:3.10-slim
 
-# Установка зависимостей ОС
+# Установим зависимости
 RUN apt-get update && apt-get install -y \
-    wget curl unzip gnupg2 ca-certificates fonts-liberation libnss3 libxss1 libgconf-2-4 libasound2 libatk-bridge2.0-0 libgtk-3-0 \
-    chromium chromium-driver \
-    && rm -rf /var/lib/apt/lists/*
+    wget \
+    unzip \
+    curl \
+    gnupg \
+    ca-certificates \
+    fonts-liberation \
+    libnss3 \
+    libxss1 \
+    libappindicator3-1 \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libgtk-3-0 \
+    libx11-xcb1 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    xdg-utils \
+    --no-install-recommends && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Устанавливаем рабочую директорию
-WORKDIR /usr/src/app
+# Установка Google Chrome
+RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
+    apt-get update && \
+    apt-get install -y google-chrome-stable && \
+    rm -rf /var/lib/apt/lists/*
 
-# Копируем зависимости
+# Установка ChromeDriver той же версии
+RUN CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+') && \
+    DRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}") && \
+    wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/${DRIVER_VERSION}/chromedriver_linux64.zip && \
+    unzip /tmp/chromedriver.zip -d /usr/local/bin/ && \
+    rm /tmp/chromedriver.zip && \
+    chmod +x /usr/local/bin/chromedriver
+
+# Установка Python зависимостей
 COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Устанавливаем Python-зависимости
-RUN pip install --upgrade pip && pip install -r requirements.txt
-
-# Копируем весь проект
+# Копируем проект
 COPY . .
 
-# Создаём нужные директории
-RUN mkdir -p logs screenshots allure-results
-
-# Запускаем pytest при запуске контейнера
 CMD ["pytest"]
