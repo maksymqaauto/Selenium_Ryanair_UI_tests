@@ -8,7 +8,6 @@ import logging
 import pytest
 import platform
 
-
 log_dir = os.path.join(os.getcwd(), "logs")
 os.makedirs(log_dir, exist_ok=True)
 
@@ -108,7 +107,6 @@ def flight_search_setup(driver):
     return page
 
 
-
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s',
@@ -118,6 +116,7 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
+
 
 @pytest.fixture(autouse=True)
 def log_test_start_and_finish(request):

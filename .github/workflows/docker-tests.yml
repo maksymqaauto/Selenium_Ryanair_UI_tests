@@ -22,11 +22,11 @@ jobs:
 
     - name: 🚀 Run tests inside Docker (timeout 20 мин)
       run: |
-        bash -c "timeout 1200 docker run --rm \
+        timeout 1200 docker run --rm \
           -v ${{ github.workspace }}/allure-results:/app/allure-results \
           -v ${{ github.workspace }}/screenshots:/app/screenshots \
           -v ${{ github.workspace }}/logs:/app/logs \
-          selenium-tests"
+          selenium-tests
 
     - name: 📤 Upload Allure results
       uses: actions/upload-artifact@v4
