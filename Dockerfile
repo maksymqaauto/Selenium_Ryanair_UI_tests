@@ -1,41 +1,25 @@
-FROM python:3.11-slim
+FROM python:3.10-slim
 
-LABEL maintainer="Max"
-
-# Установка зависимостей
+# Установка зависимостей ОС
 RUN apt-get update && apt-get install -y \
-    curl unzip gnupg2 xvfb wget \
-    fonts-liberation libnss3 libxss1 libappindicator3-1 \
-    libasound2 libatk-bridge2.0-0 libgtk-3-0 libgbm1 libvulkan1 xdg-utils \
+    wget curl unzip gnupg2 ca-certificates fonts-liberation libnss3 libxss1 libgconf-2-4 libasound2 libatk-bridge2.0-0 libgtk-3-0 \
+    chromium chromium-driver \
     && rm -rf /var/lib/apt/lists/*
 
-# Установка Chrome
-RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
-    apt-get install -y ./google-chrome-stable_current_amd64.deb && \
-    rm google-chrome-stable_current_amd64.deb
+# Устанавливаем рабочую директорию
+WORKDIR /usr/src/app
 
-# Установка ChromeDriver (версия 136.0.7103.113)
-RUN wget -O /tmp/chromedriver.zip https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/136.0.7103.113/linux64/chromedriver-linux64.zip && \
-    unzip /tmp/chromedriver.zip -d /tmp/ && \
-    mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/ && \
-    chmod +x /usr/local/bin/chromedriver && \
-    rm -rf /tmp/*
-
-# Установка рабочей директории
-WORKDIR /app
-
-# Установка зависимостей
+# Копируем зависимости
 COPY requirements.txt .
+
+# Устанавливаем Python-зависимости
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Копируем проект
+# Копируем весь проект
 COPY . .
 
-# Создание директорий
-RUN mkdir -p /app/logs /app/screenshots /app/allure-results
+# Создаём нужные директории
+RUN mkdir -p logs screenshots allure-results
 
-# Установка переменных окружения
-ENV PYTHONWARNINGS="ignore"
-
-# Запуск тестов
-ENTRYPOINT ["xvfb-run", "--server-args=-screen 0 1920x1080x24", "pytest", "--capture=tee-sys", "-v"]
+# Запускаем pytest при запуске контейнера
+CMD ["pytest"]
