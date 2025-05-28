@@ -11,6 +11,9 @@ RUN wget -q -O /tmp/chrome-linux64.zip "https://storage.googleapis.com/chrome-fo
     unzip /tmp/chrome-linux64.zip -d /usr/local/bin/ && \
     rm /tmp/chrome-linux64.zip
 
+# Даем права на выполнение бинарнику Chrome
+RUN chmod +x /usr/local/bin/chrome-linux64/chrome
+
 # Скачиваем ChromeDriver той же версии
 RUN wget -q -O /tmp/chromedriver-linux64.zip "https://storage.googleapis.com/chrome-for-testing-public/137.0.7151.55/linux64/chromedriver-linux64.zip" && \
     unzip /tmp/chromedriver-linux64.zip -d /usr/local/bin/ && \
