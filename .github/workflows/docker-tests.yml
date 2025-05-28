@@ -21,26 +21,37 @@ jobs:
       run: docker build -t selenium-tests .
 
     - name: 🚀 Run tests inside Docker (timeout 20 мин)
+      timeout-minutes: 20
       run: |
-        timeout 1200 docker run --rm \
+        docker run --rm \
           -v ${{ github.workspace }}/allure-results:/app/allure-results \
           -v ${{ github.workspace }}/screenshots:/app/screenshots \
           -v ${{ github.workspace }}/logs:/app/logs \
           selenium-tests
 
+    - name: 📄 Show last lines of pytest.log (debug)
+      if: always()
+      run: |
+        echo "::group::📄 pytest.log"
+        tail -n 50 logs/pytest.log || echo "No log file found"
+        echo "::endgroup::"
+
     - name: 📤 Upload Allure results
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: allure-results
         path: allure-results/
 
     - name: 📤 Upload Screenshots (on failure)
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: screenshots
         path: screenshots/
 
     - name: 📤 Upload Logs
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: logs
