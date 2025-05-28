@@ -1,62 +1,34 @@
 FROM python:3.11-slim
 
-# Обновление системы и установка зависимостей
+# Установка нужных пакетов
 RUN apt-get update && apt-get install -y \
-    wget \
-    unzip \
-    curl \
-    gnupg \
-    ca-certificates \
-    fonts-liberation \
-    libnss3 \
-    libxss1 \
-    libasound2 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libx11-xcb1 \
-    libgtk-3-0 \
-    libdrm2 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxrandr2 \
-    libgbm1 \
-    libpango-1.0-0 \
-    libxext6 \
-    libxfixes3 \
-    lsb-release \
-    --no-install-recommends && rm -rf /var/lib/apt/lists/*
+    curl wget unzip \
+    fonts-liberation libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libxss1 libgbm1 libasound2 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Установка Google Chrome (for testing)
-RUN mkdir -p /opt/chrome && \
-    wget -q https://storage.googleapis.com/chrome-for-testing-public/137.0.7151.55/linux64/chrome-linux64.zip && \
-    unzip chrome-linux64.zip -d /opt/chrome && \
-    rm chrome-linux64.zip && \
-    ln -s /opt/chrome/chrome-linux64/chrome /usr/bin/google-chrome
+# Скачиваем Chrome для тестирования
+RUN wget -q -O /tmp/chrome-linux64.zip "https://storage.googleapis.com/chrome-for-testing-public/137.0.7151.55/linux64/chrome-linux64.zip" && \
+    unzip /tmp/chrome-linux64.zip -d /usr/local/bin/ && \
+    rm /tmp/chrome-linux64.zip
 
-# Установка ChromeDriver (соответствующей версии)
-RUN wget -q https://storage.googleapis.com/chrome-for-testing-public/137.0.7151.55/linux64/chromedriver-linux64.zip && \
-    unzip chromedriver-linux64.zip -d /usr/local/bin/ && \
-    rm chromedriver-linux64.zip && \
-    chmod +x /usr/local/bin/chromedriver-linux64/chromedriver && \
-    ln -s /usr/local/bin/chromedriver-linux64/chromedriver /usr/bin/chromedriver
+# Скачиваем ChromeDriver той же версии
+RUN wget -q -O /tmp/chromedriver-linux64.zip "https://storage.googleapis.com/chrome-for-testing-public/137.0.7151.55/linux64/chromedriver-linux64.zip" && \
+    unzip /tmp/chromedriver-linux64.zip -d /usr/local/bin/ && \
+    rm /tmp/chromedriver-linux64.zip
 
-# Установка Allure
-RUN wget -q https://github.com/allure-framework/allure2/releases/download/2.27.0/allure-2.27.0.tgz && \
-    tar -zxvf allure-2.27.0.tgz -C /opt/ && \
-    ln -s /opt/allure-2.27.0/bin/allure /usr/bin/allure && \
-    rm allure-2.27.0.tgz
+# Перемещаем chromedriver в /usr/local/bin/chromedriver и даем права на выполнение
+RUN mv /usr/local/bin/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver && \
+    chmod +x /usr/local/bin/chromedriver
 
-# Установка Python-зависимостей
+# (Опционально) Можно добавить PATH, если надо
+ENV PATH="/usr/local/bin:${PATH}"
+
 WORKDIR /usr/workspace
-COPY ./requirements.txt /usr/workspace
-RUN pip install --no-cache-dir -r requirements.txt
 
-# Копируем весь проект
+COPY ./requirements.txt /usr/workspace/
+
+RUN pip3 install --no-cache-dir -r requirements.txt
+
 COPY . /usr/workspace
 
-# Устанавливаем переменные среды (если нужно)
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
-# Команда по умолчанию (если нужна)
-CMD ["pytest", "--alluredir=allure-results"]
+CMD ["pytest", "--maxfail=1", "--disable-warnings", "-q"]
