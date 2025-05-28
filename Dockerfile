@@ -1,71 +1,62 @@
-# Базовый образ
 FROM python:3.11-slim
 
-# Обновление пакетов и установка зависимостей
+# Обновление системы и установка зависимостей
 RUN apt-get update && apt-get install -y \
     wget \
-    curl \
     unzip \
+    curl \
     gnupg \
     ca-certificates \
     fonts-liberation \
-    libasound2 \
-    libatk-bridge2.0-0 \
-    libatk1.0-0 \
-    libc6 \
-    libcairo2 \
-    libcups2 \
-    libdbus-1-3 \
-    libexpat1 \
-    libfontconfig1 \
-    libgbm1 \
-    libgcc1 \
-    libglib2.0-0 \
-    libgtk-3-0 \
-    libnspr4 \
     libnss3 \
-    libpango-1.0-0 \
-    libpangocairo-1.0-0 \
-    libstdc++6 \
-    libx11-6 \
+    libxss1 \
+    libasound2 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
     libx11-xcb1 \
-    libxcb1 \
+    libgtk-3-0 \
+    libdrm2 \
     libxcomposite1 \
-    libxcursor1 \
     libxdamage1 \
+    libxrandr2 \
+    libgbm1 \
+    libpango-1.0-0 \
     libxext6 \
     libxfixes3 \
-    libxi6 \
-    libxrandr2 \
-    libxrender1 \
-    libxss1 \
-    libxtst6 \
     lsb-release \
-    xdg-utils \
-    --no-install-recommends && \
-    rm -rf /var/lib/apt/lists/*
+    --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
-# Установка Google Chrome
-RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /usr/share/keyrings/google.gpg && \
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
-    apt-get update && apt-get install -y google-chrome-stable && \
-    rm -rf /var/lib/apt/lists/*
+# Установка Google Chrome (for testing)
+RUN mkdir -p /opt/chrome && \
+    wget -q https://storage.googleapis.com/chrome-for-testing-public/137.0.7151.55/linux64/chrome-linux64.zip && \
+    unzip chrome-linux64.zip -d /opt/chrome && \
+    rm chrome-linux64.zip && \
+    ln -s /opt/chrome/chrome-linux64/chrome /usr/bin/google-chrome
 
-# Установка соответствующего ChromeDriver
-RUN CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+' | head -1) && \
-    DRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION") && \
-    wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/${DRIVER_VERSION}/chromedriver_linux64.zip && \
-    unzip /tmp/chromedriver.zip -d /usr/local/bin/ && \
-    rm /tmp/chromedriver.zip && \
-    chmod +x /usr/local/bin/chromedriver
+# Установка ChromeDriver (соответствующей версии)
+RUN wget -q https://storage.googleapis.com/chrome-for-testing-public/137.0.7151.55/linux64/chromedriver-linux64.zip && \
+    unzip chromedriver-linux64.zip -d /usr/local/bin/ && \
+    rm chromedriver-linux64.zip && \
+    chmod +x /usr/local/bin/chromedriver-linux64/chromedriver && \
+    ln -s /usr/local/bin/chromedriver-linux64/chromedriver /usr/bin/chromedriver
 
-# Установка зависимостей Python
-COPY requirements.txt .
+# Установка Allure
+RUN wget -q https://github.com/allure-framework/allure2/releases/download/2.27.0/allure-2.27.0.tgz && \
+    tar -zxvf allure-2.27.0.tgz -C /opt/ && \
+    ln -s /opt/allure-2.27.0/bin/allure /usr/bin/allure && \
+    rm allure-2.27.0.tgz
+
+# Установка Python-зависимостей
+WORKDIR /usr/workspace
+COPY ./requirements.txt /usr/workspace
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копирование тестов
-COPY . /app
-WORKDIR /app
+# Копируем весь проект
+COPY . /usr/workspace
 
-# Точка входа по умолчанию
+# Устанавливаем переменные среды (если нужно)
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Команда по умолчанию (если нужна)
 CMD ["pytest", "--alluredir=allure-results"]
