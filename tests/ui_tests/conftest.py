@@ -7,6 +7,7 @@ from selenium.webdriver.chrome.service import Service
 import logging
 import pytest
 import platform
+import tempfile
 
 # Жёстко заданные пути для CI
 LOG_DIR = "/app/logs"
@@ -27,6 +28,8 @@ logging.basicConfig(
 )
 
 
+
+
 @pytest.fixture(scope="function")
 def driver(request):
     options = webdriver.ChromeOptions()
@@ -36,9 +39,11 @@ def driver(request):
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--disable-dev-shm-usage")
 
+    # Добавляем уникальную временную папку для профиля пользователя
+    user_data_dir = tempfile.mkdtemp()
+    options.add_argument(f"--user-data-dir={user_data_dir}")
+
     if platform.system() == "Linux":
-        # Указываем путь к Chrome binary из докера
-        options.binary_location = "/usr/local/bin/chrome-linux64/chrome"
         service = Service("/usr/local/bin/chromedriver")
     else:
         service = Service()
@@ -46,19 +51,6 @@ def driver(request):
     driver = webdriver.Chrome(service=service, options=options)
 
     yield driver
-
-    # При падении теста сохраняем скриншот и лог
-    if hasattr(request.node, "rep_call") and request.node.rep_call.failed:
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-
-        os.makedirs(SCREENSHOT_DIR, exist_ok=True)
-        screenshot_path = os.path.join(SCREENSHOT_DIR, f"{request.node.name}_{timestamp}.png")
-        driver.save_screenshot(screenshot_path)
-
-        os.makedirs(LOG_DIR, exist_ok=True)
-        log_path = os.path.join(LOG_DIR, f"{request.node.name}_{timestamp}.log")
-        with open(log_path, "w", encoding="utf-8") as f:
-            f.write(f"Test '{request.node.name}' failed at {timestamp}\n")
 
     driver.quit()
 
