@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/tests
+    working_dir: /tests
+    environment:
+      BROWSER: ${BROWSER:-chrome}
+      STAGE: ${STAGE:-dev}
+    command: >
+      sh -c "pytest tests/ui_tests -sv -o log_cli=true --alluredir=allure-results --junitxml=test-results.xml"
+
+  report:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/tests
+    working_dir: /tests
+    command: >
+      sh -c "allure generate allure-results --clean -o allure-report"
