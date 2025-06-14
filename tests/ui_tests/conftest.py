@@ -39,7 +39,6 @@ def driver(request):
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--disable-dev-shm-usage")
 
-    # Добавляем уникальную временную папку для профиля пользователя
     user_data_dir = tempfile.mkdtemp()
     options.add_argument(f"--user-data-dir={user_data_dir}")
 
